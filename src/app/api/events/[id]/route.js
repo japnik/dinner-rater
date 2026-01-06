@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
 import db from '@/lib/db';
 
 export async function GET(request, { params }) {
     try {
+        const session = await auth();
         // The params promise needs to be awaited in newer Next.js versions if accessing directly,
         // but here params is the second argument object. 
         // In Next.js 15+, params is a Promise. Let's handle both or check version.
@@ -23,6 +25,10 @@ export async function GET(request, { params }) {
         const event = eventResult.rows[0];
 
         if (!event) {
+            return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+        }
+
+        if (event.user_id && event.user_id !== session?.user?.id) {
             return NextResponse.json({ error: 'Event not found' }, { status: 404 });
         }
 

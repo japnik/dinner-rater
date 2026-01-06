@@ -1,18 +1,39 @@
 import Link from 'next/link';
+import { auth } from '@/lib/auth';
 import db from '@/lib/db';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { UserMenu } from '@/components/UserMenu';
 import { Plus, Utensils } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
-  const result = await db.execute('SELECT * FROM events ORDER BY created_at DESC');
-  const events = result.rows;
+  const session = await auth();
+  const user = session?.user;
+
+  let events;
+  let workspaceName = "Universal Workspace";
+
+  if (user?.id) {
+    workspaceName = `${user.name || "User"}'s Workspace`;
+    const result = await db.execute({
+      sql: 'SELECT * FROM events WHERE user_id = ? ORDER BY created_at DESC',
+      args: [user.id]
+    });
+    events = result.rows;
+  } else {
+    // Universal
+    const result = await db.execute('SELECT * FROM events WHERE user_id IS NULL ORDER BY created_at DESC');
+    events = result.rows;
+  }
 
   return (
     <main className="max-w-md mx-auto p-6 space-y-8 pb-20">
-      <header className="text-center space-y-2 pt-8">
+      <header className="relative text-center space-y-2 pt-8">
+        <div className="absolute right-0 top-0">
+          <UserMenu user={user} />
+        </div>
         <div className="inline-flex p-4 rounded-full bg-white/5 mb-4 glass ring-1 ring-white/10">
           <Utensils className="w-8 h-8 text-violet-400" />
         </div>
@@ -20,6 +41,9 @@ export default async function Home() {
           Dinner Rater
         </h1>
         <p className="text-white/60">Rate meals with friends</p>
+        <div className="inline-block px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs text-violet-300 font-medium">
+          {workspaceName}
+        </div>
       </header>
 
       <section className="space-y-4">

@@ -42,6 +42,24 @@ const initSchema = async () => {
       FOREIGN KEY (dish_id) REFERENCES dishes (id) ON DELETE CASCADE
     )
   `);
+
+    await db.execute(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT UNIQUE,
+      password TEXT,
+      name TEXT,
+      image TEXT,
+      provider TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+    try {
+        await db.execute('ALTER TABLE events ADD COLUMN user_id INTEGER');
+    } catch (e) {
+        // Column likely exists or table doesn't exist yet (handled by CREATE)
+    }
 };
 
 // Auto-initialize (in a real app, might want to do this explicitly or in migration script)
